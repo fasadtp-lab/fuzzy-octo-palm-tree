@@ -1,0 +1,15 @@
+# Сжатие: three.min.js уезжает 160 КБ вместо 633 КБ
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain application/javascript application/json image/svg+xml
+</IfModule>
+# Кэш: повторные открытия тура не тянут библиотеку заново
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType application/javascript "access plus 30 days"
+  ExpiresByType image/jpeg "access plus 30 days"
+  ExpiresByType video/mp4 "access plus 30 days"
+  ExpiresByType text/html "access plus 10 minutes"
+</IfModule>
+AddType video/mp4 .mp4
+AddDefaultCharset UTF-8
+DirectoryIndex index.html

@@ -9,7 +9,12 @@ docs = root / "docs"
 docs.mkdir(exist_ok=True)
 src = (here / "index.html").read_text(encoding="utf-8")
 
-SITE = "https://fasadtp-lab.github.io/fuzzy-octo-palm-tree/"
+# python3 build-public.py [https://ваш-домен.ру/папка/] — адрес нужен только
+# для og-тегов (превью ссылки в мессенджерах). Без аргумента ставим
+# относительные пути: большинство мессенджеров их разбирает само.
+SITE = sys.argv[1] if len(sys.argv) > 1 else ""
+if SITE and not SITE.endswith("/"):
+    SITE += "/"
 
 # three.js подключаем локально вместо CDN
 src = re.sub(r"/\* -+ загрузка three\.js.*?\n\}\)\(\);\n", "", src, flags=re.S)
@@ -44,7 +49,7 @@ HEAD = """<!doctype html>
 <meta property="og:title" content="Квартира № 643 — 3D-тур с ремонтом">
 <meta property="og:description" content="1-комнатная, 39,30 м², ул. Родины. Пройдитесь по квартире от первого лица прямо в браузере.">
 <meta property="og:image" content="SITE_URLposter.jpg">
-<meta property="og:url" content="SITE_URL">
+OG_URL
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#127968;</text></svg>">
 <style>
@@ -57,7 +62,8 @@ img{max-width:100%}
 [hidden]{display:none!important}
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 </style>
-""".replace("SITE_URL", SITE).replace("FONTS", fonts)
+""".replace("OG_URL", '<meta property="og:url" content="%s">' % SITE if SITE else "")\
+       .replace("SITE_URL", SITE).replace("FONTS", fonts)
 
 TAIL = """
 <script src="three.min.js"></script>
@@ -115,6 +121,22 @@ poster = root / "video" / "poster-643.jpg"
 if poster.exists():
     shutil.copy(poster, docs / "poster.jpg")
 (docs / ".nojekyll").write_text("", encoding="utf-8")
+(docs / ".htaccess").write_text("""# Сжатие: three.min.js уезжает 160 КБ вместо 633 КБ
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain application/javascript application/json image/svg+xml
+</IfModule>
+# Кэш: повторные открытия тура не тянут библиотеку заново
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType application/javascript "access plus 30 days"
+  ExpiresByType image/jpeg "access plus 30 days"
+  ExpiresByType video/mp4 "access plus 30 days"
+  ExpiresByType text/html "access plus 10 minutes"
+</IfModule>
+AddType video/mp4 .mp4
+AddDefaultCharset UTF-8
+DirectoryIndex index.html
+""", encoding="utf-8")
 print("docs/index.html", (docs / "index.html").stat().st_size, "байт")
 
 # --- версия одним файлом: three.js вшит внутрь, ничего рядом не нужно.
