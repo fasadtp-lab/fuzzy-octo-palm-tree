@@ -1,0 +1,16 @@
+{
+  "name": "kvartira-643-video",
+  "private": true,
+  "description": "Рендер видеообзора квартиры № 643 из 3D-тура",
+  "type": "module",
+  "scripts": {
+    "build": "python3 make-tour.py",
+    "render": "python3 make-tour.py && node render.mjs"
+  },
+  "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@fontsource/manrope": "^5.0.0",
+    "@fontsource/unbounded": "^5.0.0",
+    "three": "0.152.2"
+  }
+}
