@@ -1,7 +1,7 @@
 # Собирает docs/ — автономную версию 3D-тура для GitHub Pages.
 # Открывается по обычной ссылке в любом браузере: аккаунт не нужен,
 # внешних зависимостей нет (three.js и шрифты лежат рядом/вшиты).
-import base64, pathlib, re, shutil
+import base64, pathlib, re, shutil, sys
 
 here = pathlib.Path(__file__).parent
 root = here.parent
@@ -75,7 +75,7 @@ TAIL = """
   boot();
   // кнопка «поделиться» — на телефоне открывает системное меню отправки
   var tools = document.getElementById("tools");
-  if (tools && navigator.share) {
+  if (tools && navigator.share && /^https?:$/.test(location.protocol)) {
     var b = document.createElement("button");
     b.className = "tbtn"; b.type = "button"; b.textContent = "Поделиться ссылкой";
     b.addEventListener("click", function () {
@@ -116,3 +116,13 @@ if poster.exists():
     shutil.copy(poster, docs / "poster.jpg")
 (docs / ".nojekyll").write_text("", encoding="utf-8")
 print("docs/index.html", (docs / "index.html").stat().st_size, "байт")
+
+# --- версия одним файлом: three.js вшит внутрь, ничего рядом не нужно.
+# Открывается двойным кликом и работает без интернета и без хостинга.
+three = (root / "video" / "node_modules" / "three" / "build" / "three.min.js").read_text(encoding="utf-8")
+single = (HEAD + src + TAIL
+          .replace('<script src="three.min.js"></script>', "<script>" + three + "</script>"))
+out = root / "dist" / "kvartira-643-3d-tour.html"
+out.parent.mkdir(exist_ok=True)
+out.write_text(single, encoding="utf-8")
+print("dist/kvartira-643-3d-tour.html", out.stat().st_size, "байт")

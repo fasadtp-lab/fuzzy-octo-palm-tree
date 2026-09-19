@@ -1190,7 +1190,7 @@ function init() {
   boot();
   // кнопка «поделиться» — на телефоне открывает системное меню отправки
   var tools = document.getElementById("tools");
-  if (tools && navigator.share) {
+  if (tools && navigator.share && /^https?:$/.test(location.protocol)) {
     var b = document.createElement("button");
     b.className = "tbtn"; b.type = "button"; b.textContent = "Поделиться ссылкой";
     b.addEventListener("click", function () {
