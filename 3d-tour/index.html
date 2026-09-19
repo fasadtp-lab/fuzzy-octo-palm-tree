@@ -96,6 +96,28 @@
   #go:active{transform:translateY(1px)}
   #note{font-size:11.5px;color:var(--ink-3);margin:12px 0 0;line-height:1.5}
   #load{font-size:12px;color:var(--ink-3);margin-top:14px}
+  /* телефон: интерфейс сжимается, подсказки клавиатуры прячутся */
+  @media (max-width:600px),(pointer:coarse){
+    #passport{left:10px;top:calc(10px + env(safe-area-inset-top,0px));padding:8px 10px;max-width:calc(100vw - 132px)}
+    #passport h1,#passport .sub,#facts{display:none}
+    #passport .lbl{font-size:9.5px}
+    #rooms{margin-top:7px;gap:5px}
+    .chip{font-size:11px;padding:4px 9px}
+    #tools{top:calc(10px + env(safe-area-inset-top,0px));right:10px;gap:6px}
+    .tbtn{min-width:0;padding:7px 10px;font-size:11px}
+    #keys{display:none!important}
+    #mapwrap{width:136px;padding:5px 5px 3px;bottom:calc(10px + env(safe-area-inset-bottom,0px));right:10px}
+    #map{width:126px;height:110px}
+    #mapfoot .lbl{display:none}
+    #here{font-size:11px}
+    #stick{width:118px;height:118px;bottom:calc(74px + env(safe-area-inset-bottom,0px))}
+    #knob{width:46px;height:46px;margin:-23px 0 0 -23px}
+  }
+  /* первая подсказка на телефоне — гаснет сама */
+  #tip{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(210px + env(safe-area-inset-bottom,0px));
+    z-index:6;padding:9px 14px;border-radius:999px;font-size:12.5px;font-weight:600;color:#FFF6EA;
+    background:rgba(24,18,12,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    white-space:nowrap;transition:opacity .6s;pointer-events:none}
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -137,6 +159,7 @@
 </div>
 
 <div id="touch"><div id="stick"><div id="knob"></div></div></div>
+<div id="tip" hidden>Свайп справа — осмотреться, джойстик — идти</div>
 
 <div id="start">
   <div class="box">
@@ -148,11 +171,11 @@
       <li><i style="background:var(--sw-floor)"></i><div><b>Ламинат</b><em>тёмный, 33 класс</em></div></li>
       <li><i style="background:var(--sw-white)"></i><div><b>Окна и порталы</b><em>белые рамы, арки без дверей</em></div></li>
       <li><i style="background:var(--sw-tile)"></i><div><b>Санузел</b><em>керамогранит бежевый</em></div></li>
-      <li><i style="background:#FBFBF8"></i><div><b>Кухня</b><em>белый гарнитур, 2,0 м</em></div></li>
+      <li><i style="background:#FBFBF8"></i><div><b>Кухня</b><em>белый гарнитур, тёмная столешница</em></div></li>
       <li><i style="background:var(--sw-flower)"></i><div><b>Акценты</b><em>живые цветы</em></div></li>
     </ul>
     <button id="go" type="button">Войти в квартиру</button>
-    <p id="note">Управление: мышь и WASD на компьютере, джойстик и свайп на телефоне. Геометрия построена по плану № 643 (оси стен, проёмы и окна — из чертежа) и правится в объекте PLAN.</p>
+    <p id="note">На компьютере: мышь — осмотреться, WASD — идти. На телефоне: свайп — осмотреться, джойстик слева — идти. Планировка, проёмы и окна построены по чертежу квартиры № 643.</p>
     <p id="load">Загрузка сцены…</p>
   </div>
 </div>
@@ -210,6 +233,12 @@ var C = {
 };
 
 var scene, camera, renderer, clock, sunLight, hemi, ambient, fillLight, lampLights = [], evening = false;
+var MOBILE = (function () {                      // телефоны тянут сцену только с облегчёнными настройками
+  try {
+    return (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
+           /Android|iPhone|iPad|iPod|Opera Mini|IEMobile/i.test(navigator.userAgent || "");
+  } catch (e) { return false; }
+})();
 var SOLIDS = [], doorObjs = [];
 
 /* ---------- процедурные текстуры (без внешних файлов) ---------- */
@@ -846,7 +875,7 @@ function buildLights() {
   sunLight = new THREE.DirectionalLight(0xFFF2DE, 0.95);
   sunLight.position.set(5.0, 8.5, 18); sunLight.target.position.set(3.4, 1.0, 3.4);
   sunLight.castShadow = true;
-  sunLight.shadow.mapSize.width = sunLight.shadow.mapSize.height = 2048;
+  sunLight.shadow.mapSize.width = sunLight.shadow.mapSize.height = MOBILE ? 1024 : 2048;
   var sc = sunLight.shadow.camera;
   sc.left = -5.5; sc.right = 5.5; sc.top = 6.5; sc.bottom = -5; sc.near = 1; sc.far = 40;
   sunLight.shadow.bias = -0.0006; if ("normalBias" in sunLight.shadow) sunLight.shadow.normalBias = 0.02;
@@ -1056,7 +1085,7 @@ function frame(t) {
 function init() {
   var canvas = document.getElementById("scene");
   renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: "high-performance" });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, MOBILE ? 1.5 : 2));
   renderer.setSize(window.innerWidth, window.innerHeight, false);
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   if ("outputColorSpace" in renderer && THREE.SRGBColorSpace) renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -1081,6 +1110,7 @@ function init() {
     else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
   });
   bindControls(canvas);
+  if (MOBILE) { touchMode = true; document.body.classList.add("touch"); }
   window.addEventListener("resize", function () {
     camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight, false);
@@ -1093,6 +1123,12 @@ function init() {
   document.getElementById("go").addEventListener("click", function () {
     document.getElementById("start").hidden = true;
     if (!touchMode && canvas.requestPointerLock) canvas.requestPointerLock();
+    if (touchMode) {                              // первая подсказка по управлению
+      var tip = document.getElementById("tip");
+      tip.hidden = false;
+      setTimeout(function () { tip.style.opacity = 0; }, 5200);
+      setTimeout(function () { tip.hidden = true; }, 6200);
+    }
   });
   try {
     if (window.claude && window.claude.hot) {
