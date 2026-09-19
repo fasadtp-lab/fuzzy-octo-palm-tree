@@ -1164,6 +1164,17 @@ function init() {
 }
 </script>
 
+<script>
+(function () {
+  var tools = document.getElementById("tools");
+  if (!tools) return;
+  var a = document.createElement("button");
+  a.className = "tbtn"; a.type = "button"; a.textContent = "Видеообзор, 1:19";
+  a.addEventListener("click", function () { window.open("video.mp4", "_blank", "noopener"); });
+  tools.appendChild(a);
+})();
+</script>
+
 <script src="three.min.js"></script>
 <script>
 (function () {                                   // запуск + мелочи, нужные только публичной версии
