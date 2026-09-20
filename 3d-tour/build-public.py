@@ -79,6 +79,14 @@ TAIL = """
     return;
   }
   boot();
+  if (window.__noWebGL) {                        // 3D не запустится — предлагаем видеообзор
+    var go = document.getElementById("go");
+    if (go) {
+      go.disabled = false; go.style.opacity = 1; go.style.cursor = "pointer";
+      go.textContent = "Смотреть видеообзор, 1:19";
+      go.addEventListener("click", function () { window.open("video.mp4", "_blank", "noopener"); });
+    }
+  }
   // кнопка «поделиться» — на телефоне открывает системное меню отправки
   var tools = document.getElementById("tools");
   if (tools && navigator.share && /^https?:$/.test(location.protocol)) {
@@ -148,3 +156,12 @@ out = root / "dist" / "kvartira-643-3d-tour.html"
 out.parent.mkdir(exist_ok=True)
 out.write_text(single, encoding="utf-8")
 print("dist/kvartira-643-3d-tour.html", out.stat().st_size, "байт")
+
+# --- архив сайта: собираем здесь же, иначе он отстаёт от docs/
+import zipfile
+zp = root / "dist" / "kvartira-643-site.zip"
+with zipfile.ZipFile(zp, "w", zipfile.ZIP_DEFLATED) as z:
+    for f in ["index.html", "three.min.js", "video.mp4", "poster.jpg", ".htaccess"]:
+        if (docs / f).exists():
+            z.write(docs / f, f)
+print("dist/kvartira-643-site.zip", zp.stat().st_size, "байт")

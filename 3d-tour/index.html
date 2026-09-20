@@ -414,13 +414,11 @@ function buildMaterials() {
   M.wall     = new THREE.MeshStandardMaterial({ map: toTex(M.wpTex, 2, 1.4), bumpMap: toTex(M.wpTex, 2, 1.4), bumpScale: 0.014, roughness: 0.95 });
   M.ceil     = new THREE.MeshStandardMaterial({ color: C.ceil, roughness: 0.96 });
   M.floor    = new THREE.MeshStandardMaterial({ map: toTex(M.lamTex, 1, 1), bumpMap: toTex(M.lamTex, 1, 1), bumpScale: 0.022, roughness: 0.42, metalness: 0.02 });
-  M.tile     = new THREE.MeshStandardMaterial({ map: toTex(M.porTex, 1, 1), bumpMap: toTex(M.porTex, 1, 1), bumpScale: 0.012, roughness: 0.28, metalness: 0.03 });
   M.tileWall = new THREE.MeshStandardMaterial({ map: toTex(M.porTex, 1, 1), bumpMap: toTex(M.porTex, 1, 1), bumpScale: 0.012, roughness: 0.22, metalness: 0.03 });
   M.white    = new THREE.MeshStandardMaterial({ color: C.white, roughness: 0.5 });
   M.gloss    = new THREE.MeshStandardMaterial({ color: C.bright, roughness: 0.22, metalness: 0.04 });
   M.frame    = new THREE.MeshStandardMaterial({ color: 0xFCFCFA, roughness: 0.34 });
   M.tileFloor= new THREE.MeshStandardMaterial({ map: toTex(M.porFloorTex, 1, 1), bumpMap: toTex(M.porFloorTex, 1, 1), bumpScale: 0.012, roughness: 0.3, metalness: 0.04 });
-  M.counter  = new THREE.MeshStandardMaterial({ map: toTex(texStone("#E7E0D2", 0.18), 5, 3), roughness: 0.3 });
   M.stoneDark= new THREE.MeshStandardMaterial({ map: toTex(texStone("#3C3835", 0.32), 6, 4), roughness: 0.26, metalness: 0.08 });
   M.oak      = new THREE.MeshStandardMaterial({ map: toTex(M.oakTex, 1, 1), bumpMap: toTex(M.oakTex, 1, 1), bumpScale: 0.01, roughness: 0.55 });
   M.oakDark  = new THREE.MeshStandardMaterial({ map: toTex(M.oakTex, 1, 1), color: 0x8A6440, roughness: 0.55 });
@@ -651,7 +649,7 @@ function potPlant(x, z, s) {
 function lamp(x, z, power, warm, y) {
   y = y || PLAN.H - 0.06;
   cyl(0.19, 0.21, 0.055, M.lamp, x, y, z, 24, { cast: false, recv: false });
-  var l = new THREE.PointLight(warm || 0xFFE3BC, 0, 7.5, 2);
+  var l = new THREE.PointLight(warm || 0xFFE3BC, 0, 5.0, 2);
   l.position.set(x, y - 0.05, z); l.userData.power = power || 0.75; scene.add(l); lampLights.push(l);
 }
 function pointLamp(x, y, z, power, color) {
@@ -993,18 +991,28 @@ function buildLights() {
   scene.add(sunLight); scene.add(sunLight.target);
   fillLight = new THREE.DirectionalLight(0xEFE6DA, 0.22); fillLight.position.set(-4, 5, -6); scene.add(fillLight);
 }
+function setEnvStrength(k) {                     // сила карты окружения у всех материалов сцены
+  scene.traverse(function (o) {
+    var mats = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+    mats.forEach(function (m) {
+      if (!("envMapIntensity" in m)) return;
+      if (m.userData.baseEnv === undefined) m.userData.baseEnv = m.envMapIntensity;
+      m.envMapIntensity = m.userData.baseEnv * k;
+    });
+  });
+}
 function setEvening(on) {
   evening = on;
-  sunLight.intensity = on ? 0.10 : 0.95;
+  sunLight.intensity = on ? 0.04 : 0.95;
   sunLight.color.setHex(on ? 0x9FB6D8 : 0xFFF2DE);
-  hemi.intensity = on ? 0.10 : 0.32; hemi.color.setHex(on ? 0x2E3A52 : 0xC9DCF2);
-  ambient.intensity = on ? 0.05 : 0.20;
-  if (scene.environment) scene.environmentIntensity = on ? 0.35 : 1;
-  fillLight.intensity = on ? 0.05 : 0.22;
-  lampLights.forEach(function (l) { l.intensity = on ? l.userData.power : 0; });
-  if (skyMesh) skyMesh.material.color.setRGB(on ? 0.30 : 1, on ? 0.34 : 1, on ? 0.50 : 1);
-  if (groundMesh) groundMesh.material.color.setHex(on ? 0x2A3126 : 0x7F8A6A);
-  renderer.toneMappingExposure = on ? 1.06 : 0.85;
+  hemi.intensity = on ? 0.06 : 0.32; hemi.color.setHex(on ? 0x25304A : 0xC9DCF2);
+  ambient.intensity = on ? 0.025 : 0.20;
+  setEnvStrength(on ? 0.12 : 1);                 // гасим отражённый свет: иначе вечер остаётся дневным
+  fillLight.intensity = on ? 0.02 : 0.22;
+  lampLights.forEach(function (l) { l.intensity = on ? l.userData.power * 1.15 : 0; });
+  if (skyMesh) skyMesh.material.color.setRGB(on ? 0.13 : 1, on ? 0.16 : 1, on ? 0.30 : 1);
+  if (groundMesh) groundMesh.material.color.setHex(on ? 0x161A14 : 0x7F8A6A);
+  renderer.toneMappingExposure = on ? 0.92 : 0.85;
   var b = document.querySelector("#btnLight span"); if (b) b.textContent = on ? "вечер" : "день";
 }
 
@@ -1219,8 +1227,21 @@ function frame(t) {
   renderer.render(scene, camera);
   if (sunLight.shadow.autoUpdate) sunLight.shadow.autoUpdate = false;   // тень статична: считаем один раз
 }
+function webglOk() {                             // старые компьютеры и корпоративные политики умеют отключать 3D
+  try {
+    var c = document.createElement("canvas");
+    return !!(window.WebGLRenderingContext && (c.getContext("webgl2") || c.getContext("webgl") || c.getContext("experimental-webgl")));
+  } catch (e) { return false; }
+}
 function init() {
   var canvas = document.getElementById("scene");
+  if (!webglOk()) {                              // иначе пользователь нажимал «войти» и видел пустой экран
+    window.__noWebGL = true;
+    var ld = document.getElementById("load"), go = document.getElementById("go");
+    if (ld) ld.textContent = "Этот браузер не поддерживает 3D (WebGL). Откройте ссылку в Chrome, Safari или Яндекс.Браузере посвежее.";
+    if (go) { go.textContent = "3D недоступно в этом браузере"; go.disabled = true; go.style.opacity = 0.55; go.style.cursor = "not-allowed"; }
+    return;
+  }
   renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: "high-performance" });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, MOBILE ? 1.5 : 2));
   renderer.setSize(window.innerWidth, window.innerHeight, false);

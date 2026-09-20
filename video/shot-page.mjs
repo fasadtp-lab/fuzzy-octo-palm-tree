@@ -7,7 +7,7 @@ const PORT = 9555 + Math.floor(Math.random() * 300);
 const chrome = spawn("/opt/pw-browsers/chromium-1194/chrome-linux/chrome",
   ["--headless=new","--no-sandbox","--disable-dev-shm-usage","--hide-scrollbars","--use-angle=swiftshader",
    "--enable-unsafe-swiftshader","--disable-gpu-compositing","--allow-file-access-from-files",
-   `--window-size=${W},${H}`,`--remote-debugging-port=${PORT}`,"about:blank"], { stdio: "ignore" });
+   `--window-size=${W},${H}`,`--remote-debugging-port=${PORT}`, ...(process.env.NOWEBGL ? ["--disable-3d-apis"] : []), "about:blank"], { stdio: "ignore" });
 process.on("exit", () => chrome.kill());
 let ws0;
 for (let i = 0; i < 60 && !ws0; i++) {
