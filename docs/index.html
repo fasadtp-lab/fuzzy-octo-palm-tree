@@ -188,12 +188,12 @@ img{max-width:100%}
   <div class="box">
     <p class="eyebrow">КамаСтройИнвест · Казань</p>
     <h2>Пройдитесь по квартире так, как будто ремонт уже сделан</h2>
-    <p class="lead">Планировка № 643 собрана по чертежу: прихожая 5,80, санузел 4,50, кухня-гостиная 17,70 с белым угловым гарнитуром и спальня 11,30 с окном 1570 мм. Межкомнатных дверей нет — открытые арки-порталы.</p>
+    <p class="lead">Планировка № 643 собрана по чертежу: прихожая 5,80 с оттоманкой и крючками, санузел 4,50, кухня-гостиная 17,70 с белым угловым гарнитуром и спальня 11,30 с окном 1570 мм. Межкомнатных дверей нет — открытые арки-порталы.</p>
     <ul id="finish">
       <li><i style="background:var(--sw-wall)"></i><div><b>Обои</b><em>светлые телесные</em></div></li>
       <li><i style="background:var(--sw-floor)"></i><div><b>Ламинат</b><em>тёмный, 33 класс</em></div></li>
       <li><i style="background:var(--sw-white)"></i><div><b>Окна и порталы</b><em>белые рамы, арки без дверей</em></div></li>
-      <li><i style="background:var(--sw-tile)"></i><div><b>Санузел</b><em>керамогранит бежевый</em></div></li>
+      <li><i style="background:var(--sw-tile)"></i><div><b>Санузел</b><em>керамогранит, тёмная акцентная стена</em></div></li>
       <li><i style="background:#FBFBF8"></i><div><b>Кухня</b><em>белый гарнитур, тёмная столешница</em></div></li>
       <li><i style="background:var(--sw-flower)"></i><div><b>Акценты</b><em>живые цветы</em></div></li>
     </ul>
@@ -218,7 +218,7 @@ var DH = 2.10;                                   // высота проёма: �
 
 var ROOMS = [
   { id:"hall",   name:"Прихожая",       area:"5,80",  rects:[[1.975,0.125,4.205,2.575]],                             at:[2.60,0.95], look:[3.6,2.4] },
-  { id:"bath",   name:"Санузел",        area:"4,50",  rects:[[0.125,0.125,1.855,2.575]],                             at:[1.20,1.30], look:[0.9,2.3] },
+  { id:"bath",   name:"Санузел",        area:"4,50",  rects:[[0.125,0.125,1.855,2.575]],                             at:[1.48,1.28], look:[0.30,1.85] },
   { id:"living", name:"Кухня-гостиная", area:"17,70", rects:[[4.325,0.125,6.395,2.575],[3.305,2.575,6.395,6.445]],   at:[4.15,3.30], look:[5.7,1.3] },
   { id:"bed",    name:"Спальня",        area:"11,30", rects:[[0.125,2.695,3.185,6.445]],                             at:[2.70,3.55], look:[1.0,5.3] }
 ];
@@ -371,6 +371,29 @@ function texStone(base, sp) {
   }
   return c;
 }
+function texMirror() {                           // имитация отражения: светлый верх, тёмный низ
+  var c = cv(64, 256), g = c.getContext("2d");
+  var gr = g.createLinearGradient(0, 0, 0, 256);
+  gr.addColorStop(0, "#EEF2F4"); gr.addColorStop(0.40, "#DCE3E7");
+  gr.addColorStop(0.56, "#C3CCD1"); gr.addColorStop(0.80, "#98A1A6"); gr.addColorStop(1, "#6B7175");
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 256);
+  g.fillStyle = "rgba(226,201,172,.30)"; g.fillRect(0, 92, 64, 52);
+  g.fillStyle = "rgba(255,255,255,.22)"; g.fillRect(0, 150, 64, 10);
+  return c;
+}
+function texWeave() {                             // микрорельеф ткани
+  var S = 256, c = cv(S, S), g = c.getContext("2d"), i;
+  g.fillStyle = "#808080"; g.fillRect(0, 0, S, S);
+  for (i = 0; i < S; i += 4) {
+    g.fillStyle = "rgba(255,255,255,.22)"; g.fillRect(0, i, S, 2);
+    g.fillStyle = "rgba(0,0,0,.18)"; g.fillRect(i, 0, 2, S);
+  }
+  for (i = 0; i < 4000; i++) {
+    g.fillStyle = Math.random() > 0.5 ? "rgba(255,255,255,.10)" : "rgba(0,0,0,.10)";
+    g.fillRect(rnd(0, S), rnd(0, S), 2, 2);
+  }
+  return c;
+}
 function texRug() {
   var c = cv(512, 512), g = c.getContext("2d"), i;
   g.fillStyle = "#C2B098"; g.fillRect(0, 0, 512, 512);
@@ -410,22 +433,23 @@ function buildMaterials() {
   M.porTex = texPorcelain("#DCCBB3", "236,226,208", "176,156,128", "#C6B296");      // стены санузла
   M.porFloorTex = texPorcelain("#B99C77", "218,200,172", "140,114,84", "#9E8262");  // пол темнее стен
   M.oakTex = texWood(); M.blobTex = texBlob();
-  M.wall     = new THREE.MeshStandardMaterial({ map: toTex(M.wpTex, 2, 1.4), roughness: 0.95 });
+  M.weaveTex = texWeave();
+  M.wall     = new THREE.MeshStandardMaterial({ map: toTex(M.wpTex, 2, 1.4), bumpMap: toTex(M.wpTex, 2, 1.4), bumpScale: 0.014, roughness: 0.95 });
   M.ceil     = new THREE.MeshStandardMaterial({ color: C.ceil, roughness: 0.96 });
-  M.floor    = new THREE.MeshStandardMaterial({ map: toTex(M.lamTex, 1, 1), roughness: 0.42, metalness: 0.02 });
-  M.tile     = new THREE.MeshStandardMaterial({ map: toTex(M.porTex, 1, 1), roughness: 0.28, metalness: 0.03 });
-  M.tileWall = new THREE.MeshStandardMaterial({ map: toTex(M.porTex, 1, 1), roughness: 0.22, metalness: 0.03 });
+  M.floor    = new THREE.MeshStandardMaterial({ map: toTex(M.lamTex, 1, 1), bumpMap: toTex(M.lamTex, 1, 1), bumpScale: 0.022, roughness: 0.42, metalness: 0.02 });
+  M.tile     = new THREE.MeshStandardMaterial({ map: toTex(M.porTex, 1, 1), bumpMap: toTex(M.porTex, 1, 1), bumpScale: 0.012, roughness: 0.28, metalness: 0.03 });
+  M.tileWall = new THREE.MeshStandardMaterial({ map: toTex(M.porTex, 1, 1), bumpMap: toTex(M.porTex, 1, 1), bumpScale: 0.012, roughness: 0.22, metalness: 0.03 });
   M.white    = new THREE.MeshStandardMaterial({ color: C.white, roughness: 0.5 });
   M.gloss    = new THREE.MeshStandardMaterial({ color: C.bright, roughness: 0.22, metalness: 0.04 });
   M.frame    = new THREE.MeshStandardMaterial({ color: 0xFCFCFA, roughness: 0.34 });
-  M.tileFloor= new THREE.MeshStandardMaterial({ map: toTex(M.porFloorTex, 1, 1), roughness: 0.3, metalness: 0.04 });
+  M.tileFloor= new THREE.MeshStandardMaterial({ map: toTex(M.porFloorTex, 1, 1), bumpMap: toTex(M.porFloorTex, 1, 1), bumpScale: 0.012, roughness: 0.3, metalness: 0.04 });
   M.counter  = new THREE.MeshStandardMaterial({ map: toTex(texStone("#E7E0D2", 0.18), 5, 3), roughness: 0.3 });
   M.stoneDark= new THREE.MeshStandardMaterial({ map: toTex(texStone("#3C3835", 0.32), 6, 4), roughness: 0.26, metalness: 0.08 });
-  M.oak      = new THREE.MeshStandardMaterial({ map: toTex(M.oakTex, 1, 1), roughness: 0.55 });
+  M.oak      = new THREE.MeshStandardMaterial({ map: toTex(M.oakTex, 1, 1), bumpMap: toTex(M.oakTex, 1, 1), bumpScale: 0.01, roughness: 0.55 });
   M.oakDark  = new THREE.MeshStandardMaterial({ map: toTex(M.oakTex, 1, 1), color: 0x8A6440, roughness: 0.55 });
   M.steel    = new THREE.MeshStandardMaterial({ color: 0xAEB3B6, roughness: 0.34, metalness: 0.88 });
   M.handle   = new THREE.MeshStandardMaterial({ color: 0x4A443E, roughness: 0.38, metalness: 0.75 });
-  M.sofa     = new THREE.MeshStandardMaterial({ color: 0x9C8C77, roughness: 0.95 });
+  M.sofa     = new THREE.MeshStandardMaterial({ color: 0x9C8C77, bumpMap: toTex(M.weaveTex, 5, 5), bumpScale: 0.014, roughness: 0.95 });
   M.olive    = new THREE.MeshStandardMaterial({ color: 0x6E7A56, roughness: 0.92 });
   M.terra    = new THREE.MeshStandardMaterial({ color: 0xB0603C, roughness: 0.9 });
   M.curtain  = new THREE.MeshStandardMaterial({ color: 0xDFD1BA, roughness: 0.95 });
@@ -433,16 +457,19 @@ function buildMaterials() {
   M.glass    = new THREE.MeshStandardMaterial({ color: 0xDCEAF2, roughness: 0.06, transparent: true, opacity: 0.16 });
   M.metal    = new THREE.MeshStandardMaterial({ color: C.metal, roughness: 0.28, metalness: 0.9 });
   M.dark     = new THREE.MeshStandardMaterial({ color: C.dark, roughness: 0.35, metalness: 0.2 });
-  M.fabric   = new THREE.MeshStandardMaterial({ color: 0xB3A48E, roughness: 0.94 });
-  M.linen    = new THREE.MeshStandardMaterial({ color: C.linen, roughness: 0.92 });
-  M.rug      = new THREE.MeshStandardMaterial({ map: toTex(texRug(), 1, 1), roughness: 0.96 });
+  M.fabric   = new THREE.MeshStandardMaterial({ color: 0xB3A48E, bumpMap: toTex(M.weaveTex, 5, 5), bumpScale: 0.012, roughness: 0.94 });
+  M.linen    = new THREE.MeshStandardMaterial({ color: C.linen, bumpMap: toTex(M.weaveTex, 6, 6), bumpScale: 0.01, roughness: 0.92 });
+  M.rug      = new THREE.MeshStandardMaterial({ map: toTex(texRug(), 1, 1), bumpMap: toTex(M.weaveTex, 12, 12), bumpScale: 0.03, roughness: 0.96 });
   M.leaf     = new THREE.MeshStandardMaterial({ color: C.leaf, roughness: 0.75 });
   M.leaf2    = new THREE.MeshStandardMaterial({ color: C.leaf2, roughness: 0.75 });
   M.pot      = new THREE.MeshStandardMaterial({ color: 0xB07C56, roughness: 0.7 });
   M.lamp     = new THREE.MeshStandardMaterial({ color: 0xFFF6E6, roughness: 0.4, emissive: 0xFFE9C4, emissiveIntensity: 0.35 });
-  M.mirror   = new THREE.MeshStandardMaterial({ color: 0xC9D6DB, roughness: 0.06, metalness: 0.62, envMapIntensity: 1.35 });
+  M.mirror   = new THREE.MeshStandardMaterial({ map: toTex(texMirror(), 1, 1), roughness: 0.07, metalness: 0.45, envMapIntensity: 1.3 });
   M.art      = new THREE.MeshStandardMaterial({ color: 0x9C7F62, roughness: 0.8 });
   M.throw    = new THREE.MeshStandardMaterial({ color: 0x8E7A60, roughness: 0.95 });
+  M.graphite = new THREE.MeshStandardMaterial({ color: 0x3F4145, roughness: 0.38, metalness: 0.1 });
+  M.black    = new THREE.MeshStandardMaterial({ color: 0x2B2B2D, roughness: 0.42, metalness: 0.55 });
+  M.chrome   = new THREE.MeshStandardMaterial({ color: 0xD2D6D9, roughness: 0.15, metalness: 0.95 });
   M.bloom    = C.bloom.map(function (h) { return new THREE.MeshStandardMaterial({ color: h, roughness: 0.6 }); });
 }
 
@@ -485,7 +512,10 @@ function slab(w, d, mat, x, y, z, down) {
   m.position.set(x, y, z); m.receiveShadow = true; scene.add(m); return m;
 }
 function repMat(base, canvas, w, d, unit) {
-  var m = base.clone(); m.map = toTex(canvas, Math.max(0.5, w / unit), Math.max(0.5, d / unit)); return m;
+  var m = base.clone(), rx = Math.max(0.5, w / unit), ry = Math.max(0.5, d / unit);
+  m.map = toTex(canvas, rx, ry);
+  if (base.bumpMap) { m.bumpMap = toTex(canvas, rx, ry); m.bumpScale = base.bumpScale; }
+  return m;
 }
 function floorRect(x0, z0, x1, z1, kind) {
   var w = x1 - x0, d = z1 - z0;
@@ -498,6 +528,32 @@ function sk(axis, at, a0, a1, inward) {          // белый плинтус
   if (len <= 0.03) return;
   if (axis === "x") addBox(len, h, t, M.gloss, (a0 + a1) / 2, 0.008, at + inward * t / 2, { cast: false });
   else addBox(t, h, len, M.gloss, at + inward * t / 2, 0.008, (a0 + a1) / 2, { cast: false });
+}
+function cornice(x0, z0, x1, z1) {               // потолочный плинтус — граница стены и потолка
+  var y = PLAN.H - 0.08, t = 0.055;
+  addBox(x1 - x0, t, t, M.gloss, (x0 + x1) / 2, y, z0 + t / 2, { cast: false });
+  addBox(x1 - x0, t, t, M.gloss, (x0 + x1) / 2, y, z1 - t / 2, { cast: false });
+  addBox(t, t, z1 - z0, M.gloss, x0 + t / 2, y, (z0 + z1) / 2, { cast: false });
+  addBox(t, t, z1 - z0, M.gloss, x1 - t / 2, y, (z0 + z1) / 2, { cast: false });
+}
+function socket(axis, at, a, yc, inward) {       // розетка или выключатель
+  var t = 0.012, h = 0.082;
+  if (axis === "x") {
+    addBox(h, h, t, M.gloss, a, yc - h / 2, at + inward * t / 2, { cast: false });
+    addBox(0.044, 0.044, t * 1.5, M.linen, a, yc - 0.022, at + inward * t * 0.9, { cast: false, recv: false });
+  } else {
+    addBox(t, h, h, M.gloss, at + inward * t / 2, yc - h / 2, a, { cast: false });
+    addBox(t * 1.5, 0.044, 0.044, M.linen, at + inward * t * 0.9, yc - 0.022, a, { cast: false, recv: false });
+  }
+}
+function radiator(x0, x1, z, inward) {           // панельный радиатор под окном
+  var w = x1 - x0, h = 0.50, d = 0.09, cx = (x0 + x1) / 2, i;
+  addBox(w, h, d, M.gloss, cx, 0.16, z, {});
+  addBox(w + 0.02, 0.022, d + 0.02, M.white, cx, 0.66, z, { cast: false });
+  for (i = 1; i < 5; i++) addBox(0.014, h - 0.04, 0.008, M.linen, x0 + w * i / 5, 0.18, z - inward * (d / 2 + 0.004), { cast: false, recv: false });
+  [x0 + 0.08, x1 - 0.08].forEach(function (px) {
+    cyl(0.012, 0.012, 0.16, M.chrome, px, 0, z + inward * 0.02, 8, { cast: false, blob: false });
+  });
 }
 function tilePanel(axis, at, a0, a1, y0, y1, inward) {
   var len = a1 - a0, h = y1 - y0, t = 0.014;
@@ -653,25 +709,48 @@ function tileFace(axis, at, a0, a1, y0, y1, inward) {   // фартук кухн
   else addBox(t, h, len, m, at + inward * t / 2, y0, (a0 + a1) / 2, { cast: false });
 }
 
-/* ---------- ПРИХОЖАЯ 5,80 ---------- */
+/* ---------- ПРИХОЖАЯ 5,80 (оттоманка с обувными полками и крючками) ---------- */
 function buildHall() {
   floorRect(1.975, 0.125, 4.205, 2.575, "lam"); ceilRect(1.975, 0.125, 4.205, 2.575);
   sk("x", 0.125, 3.075, 4.205, +1);
   sk("z", 1.975, 0.125, 0.95, +1); sk("z", 1.975, 1.75, 2.575, +1);
-  sk("z", 4.205, 0.125, 0.40, -1); sk("z", 4.205, 1.95, 2.575, -1);
+  sk("z", 4.205, 0.125, 0.55, -1); sk("z", 4.205, 2.15, 2.575, -1);
   sk("x", 2.575, 1.975, 2.13, -1); sk("x", 2.575, 2.93, 3.40, -1);
-  wardrobe(3.605, 0.40, 4.205, 1.95, 2.45, "-x", true);                 // белый шкаф-купе с зеркалом
-  addBox(0.45, 0.78, 0.425, M.white, 3.325, 0, 0.3375, { solid: true }); // консоль-обувница
-  addBox(0.49, 0.045, 0.465, M.oak, 3.325, 0.78, 0.3375, { cast: false });
-  addBox(0.38, 0.018, 0.22, M.handle, 3.325, 0.50, 0.550, { cast: false, recv: false });
-  addBox(0.50, 0.80, 0.022, M.mirror, 3.325, 1.05, 0.142, { cast: false });
-  addBox(0.55, 0.85, 0.03, M.oakDark, 3.325, 1.03, 0.133, { cast: false });
-  addBox(0.30, 0.38, 0.05, M.gloss, 3.92, 1.68, 0.155, { cast: false });  // электрощит
-  addBox(0.85, 0.012, 0.60, M.dark, 2.52, 0.012, 0.44, { cast: false });  // коврик у входа
-  addBox(0.06, 0.42, 0.06, M.oakDark, 2.01, 1.52, 0.90, { cast: false });  // вешалка
-  for (var i = 0; i < 3; i++) cyl(0.013, 0.013, 0.08, M.handle, 2.06, 1.68 - i * 0.13, 0.90, 8, { rz: Math.PI / 2, cast: false, blob: false });
-  bouquet(3.325, 0.82, 0.34, 1.0, 9);                                     // акцент: цветы в прихожей
-  lamp(3.05, 1.35, 0.6);
+  cornice(1.975, 0.125, 4.205, 2.575);
+  // --- оттоманка у входной стены: рядом с дверью и не мешает проходу в комнаты
+  var ox0 = 3.12, ox1 = 4.16, ocx = (ox0 + ox1) / 2, od = 0.42, oz = 0.125 + od / 2;
+  addBox(ox1 - ox0, 0.06, od, M.oak, ocx, 0.10, oz, { cast: false });                  // нижняя полка для обуви
+  addBox(ox1 - ox0, 0.06, od, M.oak, ocx, 0.30, oz, { cast: false });                  // верхняя полка
+  [ox0, ox1].forEach(function (ax) { addBox(0.05, 0.46, od, M.oak, ax, 0, oz, {}); });  // боковины
+  addBox(ox1 - ox0 + 0.06, 0.05, od + 0.04, M.oak, ocx, 0.46, oz, { cast: false });
+  addBox(ox1 - ox0 + 0.04, 0.10, od + 0.02, M.sofa, ocx, 0.51, oz, { solid: true });    // мягкое сиденье
+  addBox(ox1 - ox0 - 0.04, 0.012, 0.02, M.oakDark, ocx, 0.612, oz, { cast: false, recv: false });
+  [[3.32, M.graphite], [3.50, M.graphite], [3.85, M.terra], [4.02, M.terra]].forEach(function (q) {
+    addBox(0.11, 0.10, 0.26, q[1], q[0], 0.36, oz, { cast: false });                    // обувь на полках
+  });
+  [[3.40, M.oakDark], [3.58, M.oakDark]].forEach(function (q) {
+    addBox(0.12, 0.12, 0.28, q[1], q[0], 0.16, oz, { cast: false });
+  });
+  // --- крючки для верхней одежды над оттоманкой, сверху полка для шапок
+  addBox(1.06, 0.16, 0.05, M.oak, ocx, 1.48, 0.16, { cast: false });
+  for (var i = 0; i < 5; i++) {
+    cyl(0.014, 0.014, 0.10, M.black, 3.28 + i * 0.22, 1.56, 0.23, 8, { rx: Math.PI / 2, cast: false, blob: false });
+    cyl(0.024, 0.024, 0.03, M.black, 3.28 + i * 0.22, 1.545, 0.275, 8, { blob: false, cast: false });
+  }
+  addBox(1.16, 0.04, 0.26, M.oak, ocx, 1.92, 0.27, {});                                 // полка для шапок
+  addBox(0.30, 0.16, 0.20, M.olive, 3.35, 1.96, 0.27, { cast: false });
+  addBox(0.26, 0.14, 0.18, M.linen, 3.95, 1.96, 0.27, { cast: false });
+  addBox(0.34, 0.92, 0.12, M.olive, 3.42, 0.62, 0.30, { cast: false, ry: 0.08 });        // верхняя одежда на крючках
+  addBox(0.30, 0.78, 0.11, M.graphite, 3.78, 0.70, 0.30, { cast: false, ry: -0.06 });
+  addBox(0.20, 0.46, 0.10, M.terra, 4.06, 1.02, 0.31, { cast: false, ry: 0.12 });
+  // --- зеркало в рост на боковой стене: маленькую прихожую оно зрительно раздвигает
+  addBox(0.022, 1.45, 0.66, M.mirror, 4.192, 0.42, 1.45, { cast: false });
+  addBox(0.03, 1.51, 0.72, M.oakDark, 4.201, 0.39, 1.45, { cast: false });
+  addBox(0.30, 0.38, 0.05, M.gloss, 2.35, 1.72, 0.155, { cast: false });                // электрощит
+  addBox(0.95, 0.014, 0.65, M.dark, 2.50, 0.012, 0.48, { cast: false });                // коврик у входа
+  socket("z", 4.205, 0.75, 0.32, -1); socket("z", 1.975, 2.30, 1.05, +1);
+  bouquet(4.05, 1.96, 0.27, 0.75, 7);                                                   // акцент: цветы на полке
+  lamp(2.95, 1.45, 0.65);
 }
 
 /* ---------- САНУЗЕЛ 4,50 (керамогранит бежевый) ---------- */
@@ -679,41 +758,56 @@ function buildBath() {
   floorRect(0.125, 0.125, 1.855, 2.575, "tile"); ceilRect(0.125, 0.125, 1.855, 2.575);
   tilePanel("z", 0.125, 0.125, 2.575, 0, 2.70, +1);
   tilePanel("x", 0.125, 0.125, 1.855, 0, 2.70, +1);
-  tilePanel("x", 2.575, 0.125, 1.855, 0, 2.70, -1);
+  var back = M.tileWall.clone();                                                       // тёмный керамогранит за ванной
+  back.map = toTex(M.porFloorTex, 1.73 / 0.6, 2.70 / 0.6);
+  back.bumpMap = toTex(M.porFloorTex, 1.73 / 0.6, 2.70 / 0.6); back.bumpScale = 0.012;
+  addBox(1.73, 2.70, 0.014, back, 0.99, 0, 2.568, { cast: false });
   tilePanel("z", 1.855, 0.125, 0.95, 0, 2.70, -1);
   tilePanel("z", 1.855, 1.75, 2.575, 0, 2.70, -1);
   tilePanel("z", 1.855, 0.95, 1.75, 2.05, 2.70, -1);
   // ванна 1700×700 вдоль дальней стены
-  addBox(1.70, 0.56, 0.70, M.gloss, 0.975, 0, 2.225, { solid: true });
+  var apron = M.tileWall.clone();
+  apron.map = toTex(M.porTex, 1.70 / 0.6, 0.56 / 0.6);
+  apron.bumpMap = toTex(M.porTex, 1.70 / 0.6, 0.56 / 0.6); apron.bumpScale = 0.012;
+  addBox(1.70, 0.56, 0.70, apron, 0.975, 0, 2.225, { solid: true });                  // экран ванны в плитке
   addBox(1.56, 0.05, 0.58, M.white, 0.975, 0.50, 2.225, { cast: false });
   addBox(1.74, 0.045, 0.74, M.gloss, 0.975, 0.555, 2.225, { cast: false });
-  cyl(0.024, 0.024, 1.05, M.metal, 0.20, 0.95, 2.225, 12, {});            // стойка душа
-  cyl(0.10, 0.10, 0.03, M.metal, 0.30, 1.98, 2.225, 16, {});
-  addBox(0.02, 0.06, 0.16, M.metal, 0.17, 0.86, 2.225, { cast: false, recv: false });
+  cyl(0.016, 0.016, 1.05, M.black, 0.185, 0.95, 2.225, 10, {});           // чёрная матовая душевая стойка
+  cyl(0.085, 0.085, 0.022, M.black, 0.285, 1.98, 2.225, 16, {});
+  addBox(0.022, 0.07, 0.18, M.black, 0.17, 0.86, 2.225, { cast: false, recv: false });
   addBox(0.70, 1.40, 0.022, M.glass, 0.50, 0.60, 1.895, { cast: false });  // стеклянная шторка
-  addBox(0.035, 1.42, 0.035, M.metal, 0.86, 0.60, 1.895, { cast: false });
+  addBox(0.038, 1.42, 0.038, M.black, 0.86, 0.60, 1.895, { cast: false });
   // подвесной унитаз
   addBox(0.25, 1.05, 0.70, M.gloss, 0.25, 0, 0.65, { solid: true });
-  addBox(0.02, 0.14, 0.22, M.metal, 0.383, 0.96, 0.65, { cast: false, recv: false });
+  addBox(0.022, 0.15, 0.23, M.black, 0.383, 0.96, 0.65, { cast: false, recv: false });
   addBox(0.37, 0.30, 0.36, M.gloss, 0.56, 0.36, 0.65, { solid: true });
   addBox(0.39, 0.035, 0.38, M.white, 0.565, 0.66, 0.65, { cast: false });
   // тумба с раковиной
-  addBox(0.44, 0.78, 0.62, M.white, 0.345, 0, 1.45, { solid: true });
+  addBox(0.44, 0.70, 0.62, M.graphite, 0.345, 0.08, 1.45, { solid: true });            // графитовая тумба
+  addBox(0.42, 0.08, 0.54, M.dark, 0.335, 0, 1.45, { cast: false });
+  addBox(0.024, 0.026, 0.34, M.black, 0.573, 0.42, 1.45, { cast: false, recv: false });
   addBox(0.50, 0.05, 0.72, M.oak, 0.365, 0.78, 1.45, { cast: false });
   cyl(0.19, 0.16, 0.12, M.gloss, 0.40, 0.825, 1.45, 24, { cast: false });
-  cyl(0.018, 0.018, 0.20, M.metal, 0.19, 0.83, 1.45, 10, {});
-  addBox(0.16, 0.022, 0.022, M.metal, 0.27, 1.02, 1.45, { cast: false, recv: false });
-  addBox(0.022, 0.72, 0.58, M.mirror, 0.137, 1.10, 1.45, { cast: false });
-  addBox(0.03, 0.78, 0.64, M.handle, 0.128, 1.07, 1.45, { cast: false });
+  cyl(0.019, 0.019, 0.22, M.black, 0.19, 0.83, 1.45, 10, {});
+  addBox(0.17, 0.024, 0.024, M.black, 0.275, 1.04, 1.45, { cast: false, recv: false });
+  var accent = M.tileWall.clone();
+  accent.map = toTex(M.porFloorTex, 0.96 / 0.6, 1.34 / 0.6);
+  accent.bumpMap = toTex(M.porFloorTex, 0.96 / 0.6, 1.34 / 0.6); accent.bumpScale = 0.012;
+  addBox(0.016, 1.34, 0.96, accent, 0.130, 0.88, 1.45, { cast: false });               // тёмная вставка за раковиной
+  addBox(0.022, 0.72, 0.58, M.mirror, 0.141, 1.10, 1.45, { cast: false });
+  addBox(0.03, 0.78, 0.64, M.black, 0.134, 1.07, 1.45, { cast: false });
   addBox(0.02, 0.02, 0.56, M.lamp, 0.17, 1.86, 1.45, { cast: false, recv: false });
   // стиральная машина под столешницей
   addBox(0.60, 0.80, 0.60, M.gloss, 1.50, 0, 0.43, { solid: true });
-  cyl(0.15, 0.15, 0.035, M.dark, 1.50, 0.40, 0.72, 20, { rx: Math.PI / 2, cast: false });
-  addBox(0.50, 0.06, 0.02, M.white, 1.50, 0.68, 0.723, { cast: false, recv: false });
+  cyl(0.165, 0.165, 0.02, M.graphite, 1.50, 0.40, 0.718, 22, { rx: Math.PI / 2, cast: false, blob: false });
+  cyl(0.13, 0.13, 0.03, M.dark, 1.50, 0.40, 0.726, 20, { rx: Math.PI / 2, cast: false, blob: false });
+  addBox(0.52, 0.07, 0.022, M.graphite, 1.50, 0.68, 0.723, { cast: false, recv: false });
   addBox(0.68, 0.05, 0.66, M.oak, 1.50, 0.80, 0.43, { cast: false });
-  for (var i = 0; i < 5; i++) cyl(0.011, 0.011, 0.42, M.metal, 1.83, 0.95 + i * 0.12, 1.98, 8, { rx: Math.PI / 2 });
+  for (var i = 0; i < 5; i++) cyl(0.012, 0.012, 0.42, M.black, 1.83, 0.95 + i * 0.12, 1.98, 8, { rx: Math.PI / 2, blob: false });
   addBox(0.035, 0.46, 0.26, M.terra, 1.79, 1.00, 2.22, { cast: false });
   addBox(0.035, 0.34, 0.20, M.olive, 1.79, 1.02, 1.92, { cast: false });
+  cyl(0.055, 0.012, 0.012, M.black, 0.60, 1.25, 0.145, 14, { rx: Math.PI / 2, cast: false, blob: false });
+  addBox(0.03, 0.30, 0.16, M.terra, 0.60, 0.95, 0.145, { cast: false });
   bouquet(1.42, 0.84, 0.43, 0.7, 6);                                      // акцент: цветы в санузле
   lamp(0.95, 1.30, 0.65, 0xFFF0DE);
 }
@@ -726,21 +820,23 @@ function buildLiving() {
   sk("z", 6.395, 3.10, 4.40, -1); sk("x", 6.445, 3.305, 3.80, -1); sk("x", 6.445, 5.63, 6.395, -1);
   var i, f;
   // --- нижний ряд: белые фасады, тёмная каменная столешница, графитовые ручки
-  addBox(1.47, 0.86, 0.60, M.white, 5.06, 0, 0.425, { solid: true });
-  addBox(0.60, 0.86, 1.93, M.white, 6.095, 0, 1.09, { solid: true });
+  addBox(1.47, 0.76, 0.60, M.white, 5.06, 0.10, 0.425, { solid: true });
+  addBox(0.60, 0.76, 1.93, M.white, 6.095, 0.10, 1.09, { solid: true });
+  addBox(1.47, 0.10, 0.52, M.graphite, 5.06, 0, 0.385, { cast: false });            // цоколь
+  addBox(0.52, 0.10, 1.93, M.graphite, 6.055, 0, 1.09, { cast: false });
   addBox(1.51, 0.05, 0.645, M.stoneDark, 5.06, 0.86, 0.44, { cast: false });
   addBox(0.645, 0.05, 1.97, M.stoneDark, 6.09, 0.86, 1.09, { cast: false });
   tileFace("x", 0.125, 4.325, 5.795, 0.91, 1.45, +1);                              // фартук
   tileFace("z", 6.395, 0.125, 2.05, 0.91, 1.45, -1);
   for (i = 0; i < 3; i++) {
     f = 4.345 + i * 0.483;
-    addBox(0.455, 0.80, 0.022, M.gloss, f + 0.2275, 0.03, 0.736, { cast: false });
-    addBox(0.30, 0.018, 0.028, M.handle, f + 0.2275, 0.74, 0.755, { cast: false, recv: false });
+    addBox(0.455, 0.72, 0.022, M.gloss, f + 0.2275, 0.12, 0.736, { cast: false });
+    addBox(0.30, 0.018, 0.028, M.handle, f + 0.2275, 0.76, 0.755, { cast: false, recv: false });
   }
   for (i = 0; i < 4; i++) {
     var fz = 0.15 + i * 0.47;
-    addBox(0.022, 0.80, 0.445, M.gloss, 5.789, 0.03, fz + 0.2225, { cast: false });
-    addBox(0.028, 0.018, 0.29, M.handle, 5.770, 0.74, fz + 0.2225, { cast: false, recv: false });
+    addBox(0.022, 0.72, 0.445, M.gloss, 5.789, 0.12, fz + 0.2225, { cast: false });
+    addBox(0.028, 0.018, 0.29, M.handle, 5.770, 0.76, fz + 0.2225, { cast: false, recv: false });
   }
   addBox(1.47, 0.85, 0.35, M.white, 5.06, 1.45, 0.30, {});                          // верхние шкафы
   addBox(1.43, 0.80, 0.022, M.gloss, 5.06, 1.47, 0.486, { cast: false });
@@ -804,11 +900,11 @@ function buildLiving() {
   });
   addBox(0.62, 0.05, 0.50, M.olive, 5.78, 0.50, 6.05, { cast: false });              // плед
   [[5.62, 4.55], [6.26, 4.55], [5.62, 6.25], [6.26, 6.25]].forEach(function (q) { cyl(0.022, 0.022, 0.12, M.handle, q[0], 0, q[1], 8, { cast: false, blob: false }); });
-  addBox(0.58, 0.32, 0.58, M.oak, 4.85, 0, 5.40, { solid: true });                   // журнальный столик
-  addBox(0.64, 0.04, 0.64, M.stoneDark, 4.85, 0.32, 5.40, { cast: false });
-  bouquet(4.85, 0.36, 5.40, 0.75, 7);                                                // акцент
-  addBox(0.06, 0.20, 0.26, M.terra, 4.70, 0.36, 5.62, { cast: false });              // книги
-  addBox(0.06, 0.16, 0.24, M.olive, 4.77, 0.36, 5.62, { cast: false });
+  addBox(0.50, 0.32, 0.50, M.oak, 4.98, 0, 5.40, { solid: true });                   // журнальный столик
+  addBox(0.56, 0.04, 0.56, M.stoneDark, 4.98, 0.32, 5.40, { cast: false });
+  bouquet(4.98, 0.36, 5.40, 0.7, 7);                                                // акцент
+  addBox(0.06, 0.20, 0.24, M.terra, 4.86, 0.36, 5.58, { cast: false });              // книги
+  addBox(0.06, 0.16, 0.22, M.olive, 4.93, 0.36, 5.58, { cast: false });
   addBox(0.40, 0.42, 1.10, M.oak, 3.51, 0, 5.45, { solid: true });                   // ТВ-тумба
   addBox(0.44, 0.04, 1.16, M.stoneDark, 3.53, 0.42, 5.45, { cast: false });
   addBox(0.30, 0.016, 0.40, M.handle, 3.72, 0.22, 5.45, { cast: false, recv: false });
@@ -821,6 +917,10 @@ function buildLiving() {
   potPlant(3.60, 6.12, 0.95);                                                        // акцент: растение у окна
   bouquet(4.95, 0.852, 6.32, 0.9, 8);                                                // акцент: цветы на подоконнике
   curtains(3.80, 5.63, 6.445, 2.30, -1);
+  radiator(3.95, 5.48, 6.36, -1);                                                  // радиатор под окном
+  cornice(4.325, 0.125, 6.395, 2.575); cornice(3.305, 2.635, 6.395, 6.445);
+  socket("z", 3.305, 4.20, 0.32, +1); socket("z", 6.395, 3.10, 0.32, -1);
+  socket("z", 4.325, 0.60, 1.05, +1);
   lamp(5.20, 1.20, 0.8); lamp(4.75, 5.05, 0.85);
 }
 
@@ -859,6 +959,9 @@ function buildBedroom() {
     addBox(0.01, 0.45, 0.33, M.art, 0.158, 1.555, az, { cast: false, recv: false });
   });
   curtains(1.39, 2.96, 6.445, 2.30, -1);
+  radiator(1.52, 2.83, 6.36, -1);                                                   // радиатор под окном
+  cornice(0.125, 2.695, 3.185, 6.445);
+  socket("z", 3.185, 4.30, 0.32, -1); socket("z", 0.125, 4.30, 0.60, +1);
   lamp(1.95, 4.35, 0.8);
 }
 
@@ -1115,7 +1218,7 @@ function init() {
   else if ("outputEncoding" in renderer && THREE.sRGBEncoding) renderer.outputEncoding = THREE.sRGBEncoding;
   if (THREE.ACESFilmicToneMapping) { renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.85; }
   scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.06, 400);
+  camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.05, 400);  // +25% к обзору: в маленьких комнатах узкий угол давал ощущение сжатости
   buildAll(); setEvening(false);
   hereEl = document.getElementById("here");
   var rooms = document.getElementById("rooms");

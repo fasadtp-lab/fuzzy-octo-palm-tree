@@ -2,7 +2,7 @@
 import { spawn } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { setTimeout as sleep } from "node:timers/promises";
-const [url, W, H, out, click] = [process.argv[2], +process.argv[3], +process.argv[4], process.argv[5], process.argv[6]];
+const [url, W, H, out, click, js] = [process.argv[2], +process.argv[3], +process.argv[4], process.argv[5], process.argv[6], process.argv[7]];
 const PORT = 9555 + Math.floor(Math.random() * 300);
 const chrome = spawn("/opt/pw-browsers/chromium-1194/chrome-linux/chrome",
   ["--headless=new","--no-sandbox","--disable-dev-shm-usage","--hide-scrollbars","--use-angle=swiftshader",
@@ -25,7 +25,8 @@ await cmd("Emulation.setDeviceMetricsOverride", { width: W, height: H, deviceSca
 if (W < 500) await cmd("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 5 });
 await cmd("Page.navigate", { url });
 await sleep(3500);
-if (click) { await ev(`document.querySelector("${click}")?.click(), 1`); await sleep(2500); }
+if (click) { await ev(`document.querySelector("${click}")?.click(), 1`); await sleep(2000); }
+if (js) { await ev(js); await sleep(1200); }
 const r = await cmd("Page.captureScreenshot", { format: "jpeg", quality: 92, clip: { x: 0, y: 0, width: W, height: H, scale: 1 } });
 writeFileSync(out, Buffer.from(r.result.data, "base64"));
 console.log("сохранено:", out, await ev("({w:innerWidth,h:innerHeight,three:!!window.THREE,ready:!!window.renderer})") && JSON.stringify(await ev("({three:!!window.THREE,touch:document.body.className})")));
