@@ -19,15 +19,15 @@ const ws = new WebSocket(ws0); await new Promise(r => ws.addEventListener("open"
 let id = 0; const w = new Map();
 ws.addEventListener("message", e => { const m = JSON.parse(e.data); if (m.id && w.has(m.id)) { w.get(m.id)(m); w.delete(m.id); } });
 const cmd = (method, params = {}) => { const n = ++id; ws.send(JSON.stringify({ id: n, method, params })); return new Promise(r => w.set(n, r)); };
-const ev = async x => (await cmd("Runtime.evaluate", { expression: x, returnByValue: true, awaitPromise: true })).result?.value;
+const ev = async x => (await cmd("Runtime.evaluate", { expression: x, returnByValue: true, awaitPromise: true })).result?.result?.value;
 await cmd("Page.enable"); await cmd("Runtime.enable");
 await cmd("Emulation.setDeviceMetricsOverride", { width: W, height: H, deviceScaleFactor: 1, mobile: W < 500 });
 if (W < 500) await cmd("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 5 });
 await cmd("Page.navigate", { url });
 await sleep(3500);
 if (click) { await ev(`document.querySelector("${click}")?.click(), 1`); await sleep(2000); }
-if (js) { await ev(js); await sleep(1200); }
+let jsResult; if (js) { jsResult = await ev(js); await sleep(1200); }
 const r = await cmd("Page.captureScreenshot", { format: "jpeg", quality: 92, clip: { x: 0, y: 0, width: W, height: H, scale: 1 } });
 writeFileSync(out, Buffer.from(r.result.data, "base64"));
-console.log("сохранено:", out, await ev("({w:innerWidth,h:innerHeight,three:!!window.THREE,ready:!!window.renderer})") && JSON.stringify(await ev("({three:!!window.THREE,touch:document.body.className})")));
+console.log("сохранено:", out, jsResult !== undefined ? "· " + jsResult : "");
 process.exit(0);
